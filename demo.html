@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ContentEngine AI — 内容策略引擎</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1a1a24;
+    --border: #252530;
+    --text: #e4e4ec;
+    --text2: #9090a8;
+    --text3: #606078;
+    --blue: #4d94ff;
+    --blue-bg: rgba(77,148,255,0.08);
+    --purple: #a78bfa;
+    --purple-bg: rgba(167,139,250,0.08);
+    --green: #4ade80;
+    --green-bg: rgba(74,222,128,0.08);
+    --amber: #fbbf24;
+    --red: #f87171;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(10,10,15,0.85); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px; height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  nav .logo { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+  nav .logo span { color: var(--blue); }
+  nav .links { display: flex; gap: 24px; }
+  nav .links a {
+    color: var(--text2); text-decoration: none; font-size: 14px; font-weight: 500;
+    transition: var(--transition);
+  }
+  nav .links a:hover { color: var(--text); }
+  nav .cta {
+    background: var(--blue); color: #fff; border: none; padding: 8px 20px;
+    border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: var(--transition);
+  }
+  nav .cta:hover { background: #3d7ef5; transform: translateY(-1px); }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 140px 32px 80px; text-align: center; max-width: 800px; margin: 0 auto;
+  }
+  .hero .badge {
+    display: inline-block; padding: 6px 16px; border-radius: 20px;
+    background: var(--blue-bg); color: var(--blue); font-size: 13px; font-weight: 600;
+    margin-bottom: 24px; letter-spacing: 0.5px;
+  }
+  .hero h1 {
+    font-size: 48px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.15;
+    margin-bottom: 20px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 17px; color: var(--text2); max-width: 560px; margin: 0 auto 36px;
+    line-height: 1.7;
+  }
+  .hero .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    padding: 12px 28px; border-radius: 24px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: var(--transition); text-decoration: none; display: inline-block;
+  }
+  .btn-primary { background: var(--blue); color: #fff; border: none; }
+  .btn-primary:hover { background: #3d7ef5; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(77,148,255,0.3); }
+  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-outline:hover { border-color: var(--text2); background: var(--surface2); }
+
+  /* ── Three Questions ── */
+  .questions {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    max-width: 960px; margin: 0 auto 80px; padding: 0 32px;
+  }
+  .q-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 28px; transition: var(--transition); cursor: default;
+  }
+  .q-card:hover { border-color: var(--text3); transform: translateY(-2px); }
+  .q-card .q-num { font-size: 12px; font-weight: 700; color: var(--text3); letter-spacing: 1px; margin-bottom: 8px; }
+  .q-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px; }
+  .q-card p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .q-card.q1 { border-top: 2px solid var(--blue); }
+  .q-card.q2 { border-top: 2px solid var(--purple); }
+  .q-card.q3 { border-top: 2px solid var(--green); }
+
+  /* ── Architecture Diagram ── */
+  .arch-section { padding: 60px 32px 80px; }
+  .arch-section h2, .pipeline-section h2, .demo-section h2, .prompt-section h2 {
+    text-align: center; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 12px;
+  }
+  .section-subtitle { text-align: center; color: var(--text2); font-size: 14px; margin-bottom: 48px; }
+
+  .arch-diagram {
+    max-width: 960px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0;
+  }
+  .arch-layer {
+    background: var(--surface); border: 1px solid var(--border); padding: 24px;
+    position: relative;
+  }
+  .arch-layer:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+  .arch-layer:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+  .arch-layer .layer-tag {
+    display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.5px; margin-bottom: 12px;
+  }
+  .layer-tag.l1 { background: var(--blue-bg); color: var(--blue); }
+  .layer-tag.l2 { background: var(--purple-bg); color: var(--purple); }
+  .layer-tag.l3 { background: var(--green-bg); color: var(--green); }
+  .arch-layer h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .arch-layer ul { list-style: none; }
+  .arch-layer ul li { font-size: 12px; color: var(--text2); padding: 4px 0; padding-left: 16px; position: relative; }
+  .arch-layer ul li::before { content: ''; position: absolute; left: 0; top: 10px; width: 6px; height: 6px; border-radius: 50%; }
+  .arch-layer.l1 ul li::before { background: var(--blue); }
+  .arch-layer.l2 ul li::before { background: var(--purple); }
+  .arch-layer.l3 ul li::before { background: var(--green); }
+
+  .arch-arrows {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 16px 0; max-width: 960px; margin: 0 auto;
+  }
+  .arch-arrow {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 8px 16px; font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 6px;
+  }
+  .arch-feedback {
+    max-width: 960px; margin: 0 auto; text-align: center; padding: 8px 0;
+    font-size: 12px; color: var(--amber);
+  }
+
+  /* ── Pipeline Demo ── */
+  .pipeline-section { padding: 60px 32px 80px; }
+  .pipeline-container { max-width: 960px; margin: 0 auto; }
+
+  .pipeline-steps { display: flex; gap: 8px; margin-bottom: 32px; justify-content: center; flex-wrap: wrap; }
+  .pipeline-step {
+    padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text2);
+    cursor: pointer; transition: var(--transition); white-space: nowrap;
+  }
+  .pipeline-step:hover { border-color: var(--text3); color: var(--text); }
+  .pipeline-step.active { background: var(--purple-bg); border-color: var(--purple); color: var(--purple); }
+
+  .prompt-viewer {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .prompt-viewer .prompt-header {
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .prompt-viewer .prompt-header h4 { font-size: 14px; font-weight: 700; }
+  .prompt-viewer .prompt-header .meta { font-size: 11px; color: var(--text3); }
+  .prompt-viewer .prompt-body {
+    padding: 24px; max-height: 500px; overflow-y: auto;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; font-size: 12px;
+    line-height: 1.8; color: var(--text2); white-space: pre-wrap; word-break: break-all;
+    background: var(--bg);
+  }
+  .prompt-viewer .prompt-body .role { color: var(--blue); }
+  .prompt-viewer .prompt-body .var { color: var(--amber); }
+  .prompt-viewer .prompt-body .instr { color: var(--purple); }
+  .prompt-viewer .prompt-body .constraint { color: var(--red); }
+
+  .prompt-output {
+    margin-top: 16px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px; line-height: 1.7; color: var(--green); max-height: 300px; overflow-y: auto;
+  }
+  .prompt-output .key { color: var(--blue); }
+  .prompt-output .str { color: var(--amber); }
+  .prompt-output .num { color: var(--purple); }
+  .prompt-output .bracket { color: var(--text3); }
+
+  /* ── Live Demo ── */
+  .demo-section { padding: 60px 32px 80px; }
+  .demo-container { max-width: 700px; margin: 0 auto; }
+
+  .demo-input-group { display: flex; gap: 8px; margin-bottom: 16px; }
+  .demo-input {
+    flex: 1; padding: 12px 18px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 24px; color: var(--text); font-size: 14px; outline: none; transition: var(--transition);
+  }
+  .demo-input:focus { border-color: var(--blue); }
+  .demo-input::placeholder { color: var(--text3); }
+
+  .demo-select {
+    padding: 12px 18px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 24px; color: var(--text); font-size: 14px; outline: none; cursor: pointer;
+    min-width: 160px;
+  }
+  .demo-select:focus { border-color: var(--purple); }
+
+  .demo-output-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px; margin-top: 24px; animation: fadeIn 0.4s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .demo-output-card .loading { color: var(--text3); font-style: italic; }
+  .demo-output-card .rec-item {
+    padding: 16px; background: var(--surface2); border-radius: var(--radius-sm); margin-bottom: 10px;
+    border-left: 3px solid var(--blue);
+  }
+  .demo-output-card .rec-item h5 { font-size: 14px; margin-bottom: 4px; }
+  .demo-output-card .rec-item .angle { font-size: 12px; color: var(--purple); margin-bottom: 4px; }
+  .demo-output-card .rec-item .reason { font-size: 12px; color: var(--text2); }
+  .demo-output-card .rec-item .tags { display: flex; gap: 6px; margin-top: 8px; }
+  .demo-output-card .rec-item .tag {
+    font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--border); color: var(--text3);
+  }
+
+  .typing-indicator { display: flex; gap: 4px; padding: 8px 0; }
+  .typing-indicator span {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--text3); animation: bounce 1.4s infinite;
+  }
+  .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+  /* ── Prompt Template Tabs ── */
+  .prompt-section { padding: 60px 32px 80px; }
+  .prompt-tabs { max-width: 960px; margin: 0 auto; }
+  .tab-nav { display: flex; gap: 4px; margin-bottom: 24px; justify-content: center; flex-wrap: wrap; }
+  .tab-nav button {
+    padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    background: transparent; border: 1px solid var(--border); color: var(--text2);
+    cursor: pointer; transition: var(--transition);
+  }
+  .tab-nav button:hover { border-color: var(--text3); color: var(--text); }
+  .tab-nav button.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+  /* ── Metrics Bar ── */
+  .metrics {
+    max-width: 960px; margin: 0 auto 80px; padding: 0 32px;
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 16px;
+  }
+  .metric {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px; text-align: center;
+  }
+  .metric .val { font-size: 28px; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; }
+  .metric .label { font-size: 12px; color: var(--text2); }
+  .metric.m1 .val { color: var(--blue); }
+  .metric.m2 .val { color: var(--purple); }
+  .metric.m3 .val { color: var(--green); }
+  .metric.m4 .val { color: var(--amber); }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border); padding: 40px 32px; text-align: center;
+    color: var(--text3); font-size: 13px;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 32px; }
+    .questions, .arch-diagram, .metrics { grid-template-columns: 1fr; }
+    .arch-layer:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+    .arch-layer:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+    .demo-input-group { flex-direction: column; }
+    nav .links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- nav -->
+<nav>
+  <div class="logo">Content<span>Engine</span> AI</div>
+  <div class="links">
+    <a href="#arch">架构</a>
+    <a href="#pipeline">工作流</a>
+    <a href="#demo">Demo</a>
+    <a href="#prompts">Prompt模板</a>
+  </div>
+  <button class="cta" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">预约体验</button>
+</nav>
+
+<!-- hero -->
+<section class="hero">
+  <div class="badge">AI 驱动的内容策略引擎 · MVP v1.0</div>
+  <h1>从<em>"不知道发什么"</em><br>到<em>"每一篇都有效"</em></h1>
+  <p>
+    不是又一个AI写作工具。我们回答内容创作者最根本的三个问题——
+    做什么、怎么做、效果如何，并让它们形成自进化的数据飞轮。
+  </p>
+  <div class="btns">
+    <a href="#demo" class="btn btn-primary">在线演示</a>
+    <a href="#arch" class="btn btn-outline">查看架构</a>
+  </div>
+</section>
+
+<!-- metrics -->
+<div class="metrics">
+  <div class="metric m1"><div class="val">3层</div><div class="label">闭环 AI 架构</div></div>
+  <div class="metric m2"><div class="val">10个</div><div class="label">核心 Prompt 模板</div></div>
+  <div class="metric m3"><div class="val">~¥0.01</div><div class="label">单次创作 API 成本</div></div>
+  <div class="metric m4"><div class="val">5步</div><div class="label">内容生成 Pipeline</div></div>
+</div>
+
+<!-- three questions -->
+<div class="questions">
+  <div class="q-card q1">
+    <div class="q-num">QUESTION 1</div>
+    <h3>做什么内容？</h3>
+    <p>个性化爬虫 + RAG混合检索 + LLM-Rec重排序，每天凌晨为你生成Top-5选题推荐，附带差异化切入角度。</p>
+  </div>
+  <div class="q-card q2">
+    <div class="q-num">QUESTION 2</div>
+    <h3>怎么做？</h3>
+    <p>垂直领域LoRA微调 + 五步生成Pipeline + 风格池防同质化，从大纲到多平台适配，每步可编辑。</p>
+  </div>
+  <div class="q-card q3">
+    <div class="q-num">QUESTION 3</div>
+    <h3>效果如何？</h3>
+    <p>全链路追踪 + 贝叶斯归因 + LLM周报，知道每条内容的转化贡献度，告诉你怎么调整。</p>
+  </div>
+</div>
+
+<!-- architecture -->
+<section class="arch-section" id="arch">
+  <h2>三层闭环架构</h2>
+  <p class="section-subtitle">发现 → 创作 → 归因，数据飞轮持续自进化</p>
+
+  <div class="arch-diagram">
+    <div class="arch-layer l1">
+      <span class="layer-tag l1">Layer 1</span>
+      <h4>内容机会发现</h4>
+      <ul>
+        <li>个性化嗅探爬虫（三梯队数据源）</li>
+        <li>BGE向量化 + Milvus入库</li>
+        <li>Hybrid检索：Dense + Sparse + RRF融合</li>
+        <li>LLM-Rec重排序 + 差异化角度</li>
+        <li>XGBoost粉丝-内容匹配分类</li>
+      </ul>
+    </div>
+    <div class="arch-layer l2">
+      <span class="layer-tag l2">Layer 2</span>
+      <h4>AI 辅助创作</h4>
+      <ul>
+        <li>5领域LoRA微调（r=16, rank=16）</li>
+        <li>五步生成Pipeline（每步可编辑）</li>
+        <li>风格池采样 · 防同质化三层防御</li>
+        <li>品牌专属LoRA（B端核心能力）</li>
+        <li>小红书/抖音/B站一键适配</li>
+      </ul>
+    </div>
+    <div class="arch-layer l3">
+      <span class="layer-tag l3">Layer 3</span>
+      <h4>归因反馈</h4>
+      <ul>
+        <li>全链路数据追踪（平台API+埋点）</li>
+        <li>贝叶斯反演归因（PyMC/NumPyro）</li>
+        <li>转化贡献度 + 95% HDI可信区间</li>
+        <li>LLM周报 + 三级预警</li>
+        <li>反馈回传Layer1和Layer2 → 自进化</li>
+      </ul>
+    </div>
+  </div>
+  <div class="arch-arrows">
+    <div class="arch-arrow">选题+角度 → Layer 2</div>
+    <div class="arch-arrow">发布内容 → Layer 3</div>
+  </div>
+  <div class="arch-feedback">⟲ Layer 3 归因结果回传 Layer 1（推荐权重更新） &amp; Layer 2（训练集更新）</div>
+</section>
+
+<!-- pipeline demo -->
+<section class="pipeline-section" id="pipeline">
+  <h2>五步创作 Pipeline</h2>
+  <p class="section-subtitle">点击每个步骤查看对应 Prompt 摘要</p>
+
+  <div class="pipeline-container">
+    <div class="pipeline-steps">
+      <button class="pipeline-step active" data-step="1">Step 1 · 大纲生成</button>
+      <button class="pipeline-step" data-step="2">Step 2 · 分段扩写</button>
+      <button class="pipeline-step" data-step="3">Step 3 · 风格润色</button>
+      <button class="pipeline-step" data-step="4">Step 4 · 质量自检</button>
+      <button class="pipeline-step" data-step="5">Step 5 · 多平台适配</button>
+    </div>
+
+    <div class="prompt-viewer">
+      <div class="prompt-header">
+        <h4 id="prompt-title">Step 1 · 大纲生成</h4>
+        <span class="meta" id="prompt-meta">模型: Qwen2.5-7B + LoRA | Tokens: ~800 in / ~300 out</span>
+      </div>
+      <div class="prompt-body" id="prompt-body">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- live demo -->
+<section class="demo-section" id="demo">
+  <h2>在线演示</h2>
+  <p class="section-subtitle">模拟 Layer 1 选题推荐 —— 输入你的领域，看 AI 如何帮你发现内容机会</p>
+
+  <div class="demo-container">
+    <div class="demo-input-group">
+      <input class="demo-input" id="demoDomain" placeholder="输入内容领域，如：美妆、食品、母婴、3C数码..." value="美妆护肤">
+      <select class="demo-select" id="demoStyle">
+        <option value="">全部风格</option>
+        <option value="测评">测评类</option>
+        <option value="教程">教程类</option>
+        <option value="场景">场景故事类</option>
+        <option value="清单">清单干货类</option>
+      </select>
+      <button class="btn btn-primary" onclick="runDemo()">生成选题推荐</button>
+    </div>
+    <div id="demoOutput"></div>
+  </div>
+</section>
+
+<!-- prompt templates -->
+<section class="prompt-section" id="prompts">
+  <h2>核心 Prompt 模板库</h2>
+  <p class="section-subtitle">10 个 Prompt 模板，覆盖三层 AI Pipeline</p>
+
+  <div class="prompt-tabs">
+    <div class="tab-nav">
+      <button class="active" data-tab="t1">内容质量评分</button>
+      <button data-tab="t2">LLM-Rec 选题排序</button>
+      <button data-tab="t3">粉丝画像生成</button>
+      <button data-tab="t4">风格润色</button>
+      <button data-tab="t5">质量自检</button>
+      <button data-tab="t6">多平台适配</button>
+      <button data-tab="t7">SICAS 诊断</button>
+      <button data-tab="t8">周报生成</button>
+      <button data-tab="t9">品牌语音提取</button>
+      <button data-tab="t10">大纲生成</button>
+    </div>
+    <div class="tab-content active" id="t1"></div>
+    <div class="tab-content" id="t2"></div>
+    <div class="tab-content" id="t3"></div>
+    <div class="tab-content" id="t4"></div>
+    <div class="tab-content" id="t5"></div>
+    <div class="tab-content" id="t6"></div>
+    <div class="tab-content" id="t7"></div>
+    <div class="tab-content" id="t8"></div>
+    <div class="tab-content" id="t9"></div>
+    <div class="tab-content" id="t10"></div>
+  </div>
+</section>
+
+<footer>
+  ContentEngine AI © 2026 · AI驱动的内容策略引擎 · MVP v1.0
+</footer>
+
+<script>
+// ── Pipeline Steps Data ──
+const pipelineData = {
+  1: {
+    title: 'Step 1 · 大纲生成',
+    meta: '模型: Qwen2.5-7B + 领域LoRA | Tokens: ~800 in / ~300 out | 风格池采样注入',
+    prompt: `<span class="role">你是一个专业的{domain}内容创作者。</span>请为以下选题生成一个内容大纲。
+
+<span class="instr">## 任务信息</span>
+- 选题：{topic}
+- 差异化切入角度：{differentiation_angle}
+- 目标读者：{target_fan_segment}
+- 品牌调性关键词：{brand_tone_keywords}
+
+<span class="instr">## 要求</span>
+1. 生成 3-5 个大纲节点，逻辑递进
+2. 每个节点标注预估字数（总计 {target_word_count} 字以内）
+3. 每个节点列出 2-3 个"必须覆盖的关键信息点"
+4. 开头节点必须包含"钩子"设计（3秒内抓住注意力）
+5. 结尾节点必须包含行动引导
+
+<span class="instr">## 风格约束</span>
+- {style_instruction}（从风格池采样注入）
+<span class="constraint">- 禁止使用"众所周知""毋庸置疑""在当今社会"等空话开头</span>
+- 避免使用禁用词：{banned_words}
+
+<span class="instr">## 输出格式（严格 JSON）</span>
+{ "hook_strategy": "...", "nodes": [...], "call_to_action": "...", "total_estimated_words": N }`
+  },
+  2: {
+    title: 'Step 2 · 分段扩写',
+    meta: '模型: Qwen2.5-7B + LoRA | Tokens: ~1,500 in / ~500 out per段 | 并发调用N段',
+    prompt: `<span class="role">你是一个{domain}领域的专业内容写手。</span>请扩写以下段落。
+
+<span class="instr">## 上下文</span>
+- 全文主题：{topic}
+- 上一段末句：{previous_paragraph_last_sentence}
+
+<span class="instr">## 本段要求</span>
+- 节点标题：{node_title}
+- 必须覆盖的关键信息点：{key_points}
+- 目标字数：{estimated_words}字（±20%）
+
+<span class="instr">## 写作风格</span>
+- {style_instruction}
+- 每个抽象观点后面跟一个具体例子或数据
+- 段间用过渡句衔接（首句承接上段末句）
+
+<span class="constraint">## 禁止事项</span>
+- 禁止编造数据（某信息点无可靠来源 → 标注"建议补充XX数据"）
+- 禁止输出超过 800 字（长段拆分到下一节点）
+- 禁止使用品牌禁用词：{banned_words}
+
+<span class="instr">## 输出格式（JSON）</span>
+{ "content": "...", "last_sentence": "...", "data_placeholders": [...], "word_count": N }`
+  },
+  3: {
+    title: 'Step 3 · 风格润色',
+    meta: '模型: Qwen2.5-7B + LoRA | Tokens: ~2,000 in / ~800 out | 风格池+品牌语音注入',
+    prompt: `<span class="role">你是一个内容润色编辑。</span>请对以下草稿进行风格化润色。
+
+<span class="instr">## 输入</span>
+- 原始草稿：{draft_content}
+- 预设风格：{style_instruction}
+- 品牌语音指南：{brand_voice_guide}
+
+<span class="instr">## 润色方向</span>
+1. 调整语气和用词，适配目标读者：
+   · 成分党 → 强化数据/成分/功效描述
+   · 场景派 → 强化场景/体验/感受描述
+2. 优化节奏：长句拆短、短句合并，提升流畅度
+3. <span class="constraint">检查并修正"AI味"：</span>
+   · "在当今社会""随着XX发展""众所周知"→ 全部删除
+   · "不仅...而且...""一方面...另一方面..."→ 简化
+   · 过度使用"非常""十分""极其"→ 删减50%
+4. 保留核心信息和逻辑结构，不改变事实
+
+<span class="instr">## 输出格式（JSON）</span>
+{ "polished_content": "...", "changes_summary": [...], "ai_tone_score": N }`
+  },
+  4: {
+    title: 'Step 4 · 质量自检',
+    meta: '模型: DeepSeek-V3 (API) | Tokens: ~1,500 in / ~300 out | 发布前最后关卡',
+    prompt: `<span class="role">你是一个严格的内容质量审核员。</span>找出问题，不要为了"通过"而放水。
+
+<span class="instr">## 审核维度（每项 1-5 分，3分以下不合格）</span>
+
+<span class="instr">事实准确性</span>
+- 是否有明显的事实错误或编造的数据/引用？
+- 是否有夸大或误导性表述？
+
+<span class="instr">逻辑连贯性</span>
+- 论点是否清晰？段落间过渡是否自然？
+- 是否存在逻辑跳跃或自相矛盾？
+
+<span class="instr">风格一致性</span>
+- 整篇语气风格是否统一？
+- 是否符合预设风格：{expected_style}？
+
+<span class="instr">原创性</span>
+- 是否有洗稿或过度借鉴的痕迹？
+
+<span class="instr">商业合规</span>
+<span class="constraint">- 是否含广告法禁止的绝对化用语（"最好""第一""100%"）？</span>
+- 是否含可能引发争议的比较或评价？
+
+<span class="instr">## 决策逻辑</span>
+· total ≥ 3.5 且无 critical issue → <span class="var">pass</span>
+· 2.5 ≤ total < 3.5 → <span class="constraint">rewrite（携带问题回Step 2）</span>
+· total < 2.5 或合规critical issue → <span class="constraint">block（强制人工介入）</span>
+
+<span class="instr">## 输出格式（JSON）</span>
+{ "scores": {...}, "total": N, "verdict": "pass"|"rewrite"|"block", "issues": [...] }`
+  },
+  5: {
+    title: 'Step 5 · 多平台适配',
+    meta: '模型: Qwen2.5-7B + LoRA | Tokens: ~1,000×3 in / ~500×3 out | 三平台并发',
+    prompt: `<span class="role">你是一个多平台内容运营专家。</span>请将以下内容适配为 <span class="var">{platform}</span> 版本。
+
+<span class="instr">## 原始内容</span>
+{source_content}
+
+<span class="instr">## {platform} 平台规则</span>
+{platform_rules}
+
+<span class="instr">平台差异对照：</span>
+┌──────────┬──────────────────────────────────┐
+│ 小红书   │ 知识密度高、审美感强、emoji分段     │
+│          │ 真实感>精致感、口语化但信息不水     │
+├──────────┼──────────────────────────────────┤
+│ 抖音     │ 开头3秒强钩子、句≤20字、节奏快     │
+│          │ 直接有冲击力、善用热门BGM关联       │
+├──────────┼──────────────────────────────────┤
+│ B站      │ 允许深度展开、可玩梗、预留弹幕空间  │
+│          │ 专业但不端着、可吐槽、有态度        │
+└──────────┴──────────────────────────────────┘
+
+<span class="instr">## 输出格式（JSON）</span>
+{ "title": "...", "content": "...", "hashtags": [...], "cover_text": "...", "platform_tips": "..." }`
+  }
+};
+
+// ── Pipeline Tab Switching ──
+document.querySelectorAll('.pipeline-step').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.pipeline-step').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const step = this.dataset.step;
+    document.getElementById('prompt-title').textContent = pipelineData[step].title;
+    document.getElementById('prompt-meta').textContent = pipelineData[step].meta;
+    document.getElementById('prompt-body').innerHTML = pipelineData[step].prompt;
+  });
+});
+
+// init first step
+document.getElementById('prompt-body').innerHTML = pipelineData[1].prompt;
+
+// ── Demo Simulation ──
+function runDemo() {
+  const domain = document.getElementById('demoDomain').value || '美妆护肤';
+  const style = document.getElementById('demoStyle').value;
+  const output = document.getElementById('demoOutput');
+
+  output.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div><p style="color:var(--text3);font-size:13px;">正在分析' + domain + '赛道热门内容，RAG检索中...</p>';
+
+  const demoTopics = {
+    '美妆护肤': [
+      { topic: '早八通勤妆的精简三步法', angle: '不是教你怎么化妆，而是帮你砍掉不必要的步骤——用"减法思维"打"懒人经济"', target: '25-35岁职场女性 · 时间敏感型', type: '教程' },
+      { topic: '从成分表看防晒霜的真实防护力', angle: '跳出SPF/PA数字游戏，用"成分党视角"解读瓶身不会告诉你的3个关键指标', target: '成分党 · 理性决策型', type: '测评' },
+      { topic: '夏日出油急救：补妆包里真正有用的5样东西', angle: '不是种草单品，而是教你"补妆包配置策略"——什么场景需要什么装备', target: '油皮/混油皮 · 场景派', type: '清单' },
+      { topic: '护肤界最大的智商税：你以为的"深层清洁"可能正在毁脸', angle: '用一个皮肤科原理纠正大众误区，反常识但有理有据，自带传播基因', target: '护肤小白 · 知识焦虑型', type: '科普' },
+      { topic: '和柜姐聊了一个小时：专柜大牌vs平价替代，这3个品类真的不必买贵的', angle: '第一人称体验+对话体，真实感强，打破"贵=好"的消费惯性', target: '价格敏感型 · 学生群体', type: '对比横评' },
+    ],
+    '食品饮料': [
+      { topic: '便利店隐藏吃法TOP5：打工人10元午餐升级指南', angle: '盒饭+XX=米其林，用"组合创新"思路打开便利店——不是产品种草而是生活方式', target: '职场新人 · 追求性价比', type: '清单' },
+      { topic: '无糖饮料横评：好喝不胖是真的吗？看配料表这3个指标就够了', angle: '跳出"好喝/难喝"的主观评价，建立客观的配料表评判标准', target: '控糖人群 · 成分党', type: '测评' },
+      { topic: '为什么同样一包薯片，不同国家配方不一样？', angle: '从食品工业角度切入，用"全球化vs本地化"的框架讲一个反直觉的故事', target: '食品爱好者 · 好奇型', type: '科普' },
+      { topic: '周末在家复刻网红奶茶：成本不到5块，配方还原度90%', angle: '利用"DIY省钱"心理，把外卖奶茶的价格痛点转化为内容价值', target: '学生/新职场人 · 动手型', type: '教程' },
+      { topic: '地域特产开箱：你家乡的特产可能正在抖音爆火', angle: '情感共鸣+地域荣誉感驱动分享，用"家乡味道"触发社交传播', target: '全年龄段 · 情感型', type: '场景故事' },
+    ],
+    '母婴育儿': [
+      { topic: '宝宝辅食添加顺序：儿保医生给的一张表 vs 小红书上的100种说法，到底信谁', angle: '用"信息过载焦虑"切入，帮新手妈妈建立自己的判断框架而非给标准答案', target: '0-1岁新手妈妈 · 信息焦虑型', type: '教程' },
+      { topic: '幼儿园入园准备清单：买对了省一半钱，买错了全闲置', angle: '不是种草更多，而是帮你"防坑"——用过来人视角做减法清单', target: '2-3岁宝妈 · 价格敏感型', type: '清单' },
+    ],
+    '3C数码': [
+      { topic: '二手旗舰vs新中端机：同样预算，为什么我选去年的旗舰', angle: '跳出"买新不买旧"的消费惯性，用"体验优先级"框架重新定义性价比', target: '学生/科技爱好者 · 理性型', type: '对比横评' },
+      { topic: '打工人桌面改造：只花500块，让工作效率翻倍的设备组合', angle: '不是晒设备，而是讲"工作流优化"——每个设备对应一个具体痛点', target: '职场人 · 效率导向', type: '场景故事+清单' },
+    ]
+  };
+
+  let topics = demoTopics[domain] || demoTopics['美妆护肤'];
+  if (style) topics = topics.filter(t => t.type.includes(style));
+  if (topics.length === 0) topics = demoTopics[domain] || demoTopics['美妆护肤'];
+
+  setTimeout(() => {
+    let html = '<div class="demo-output-card">';
+    html += '<p style="font-weight:700;margin-bottom:4px;">为 <span style="color:var(--blue);">' + domain + '</span> 赛道生成的 Top-' + Math.min(5, topics.length) + ' 选题推荐</p>';
+    html += '<p style="font-size:12px;color:var(--text3);margin-bottom:16px;">基于 Layer 1 混合检索(Hybrid RAG) + LLM-Rec 重排序 · 数据来源：近7天小红书+抖音公开内容池</p>';
+    topics.slice(0, 5).forEach((t, i) => {
+      html += '<div class="rec-item">';
+      html += '<h5>#' + (i+1) + ' ' + t.topic + '</h5>';
+      html += '<div class="angle">✦ 差异化切入：' + t.angle + '</div>';
+      html += '<div class="reason">👥 目标粉丝：' + t.target + '</div>';
+      html += '<div class="tags"><span class="tag">' + t.type + '</span></div>';
+      html += '</div>';
+    });
+    html += '<p style="font-size:11px;color:var(--text3);margin-top:12px;">▲ 以上内容为Demo演示，实际推荐基于实时爬虫数据 + LoRA个性化排序</p>';
+    html += '</div>';
+    output.innerHTML = html;
+  }, 1800);
+}
+
+// ── Prompt Templates Data ──
+const promptTemplates = {
+  t1: {
+    title: 'Prompt 1: 内容质量评分',
+    layer: 'Layer 1 · 离线批处理',
+    prompt: `<span class="role">你是一个内容质量评审专家。</span>请从五个维度对以下种草/测评内容打分(1-5分)，并给出总分。
+
+<span class="instr">评分维度：</span>
+1. <span class="instr">信息密度</span>——是否包含具体数据、细节、可操作信息？
+2. <span class="instr">情感感染力</span>——是否能引起共鸣、建立信任感？
+3. <span class="instr">结构清晰度</span>——逻辑是否通顺、层次是否分明？
+4. <span class="instr">原创性</span>——观点或表达是否有独到之处？
+5. <span class="instr">行动引导力</span>——看完后是否知道下一步该做什么？
+
+<span class="constraint">如果总分 < 3.5，必须在备注中说明"主要扣分维度"</span>
+
+<span class="instr">输出（严格JSON）：</span>
+{ "scores": {...}, "total": 3.8, "verdict": "pass"|"fail", "note": "" }`
+  },
+  t2: {
+    title: 'Prompt 2: LLM-Rec 选题重排序',
+    layer: 'Layer 1 · 每日凌晨异步预计算',
+    prompt: `<span class="role">你是一个内容策略分析师，专门为{domain}赛道的创作者提供选题建议。</span>
+<span class="constraint">你的信息来源仅限于下方提供的候选内容列表。不要编造列表中不存在的信息。</span>
+
+## 排序原则（优先级从高到低）
+1. <span class="var">粉丝画像匹配度</span>（权重最高）
+2. <span class="var">话题新鲜度</span>（优先近7天、竞品尚未大量覆盖的方向）
+3. <span class="var">互动信号质量</span>（收藏率 > 点赞率 的高价值内容加分）
+4. <span class="var">差异化空间</span>（能用独特视角切入 > 已被写烂的选题）
+5. <span class="var">内容互补性</span>（填补类型空白 > 重复已有类型）
+
+<span class="constraint">重要：如果候选池整体质量不高（多数同质化或时效性差），必须诚实告知，不强行推荐</span>
+
+## 输出（严格JSON）
+{ "overall_assessment": "...", "recommendations": [
+  { "rank": 1, "topic": "...", "reason": "...", "differentiation_angle": "...",
+    "target_fan_segment": "...", "estimated_effort": "low|medium|high" }
+], "low_quality_warning": null }`
+  },
+  t3: {
+    title: 'Prompt 3: 粉丝画像生成',
+    layer: 'Layer 1 · 用户首次接入时',
+    prompt: `<span class="role">你是一个用户画像分析师。</span>请根据以下粉丝群体的统计数据，生成一段简洁的粉丝画像。
+
+## 输入数据
+- 年龄分布 / 性别比例 / 地域分布(TOP5)
+- 活跃时段 / 互动高频词 / 内容偏好特征
+
+## 任务
+将粉丝划分为 2-3 个主要群体，每个群体用一句人话描述其特征和内容偏好。
+
+<span class="instr">为什么是3个维度？（消费意图 × 内容偏好 × 决策敏感因子）</span>
+这三个维度刚好覆盖"为什么买"→"看什么"→"怎样说服"的完整链路。
+
+## 输出（JSON）
+{ "segments": [
+  { "name": "成分党", "proportion": "约40%", "description": "关注产品成分和功效数据...",
+    "content_preference": "测评类/深度科普", "decision_factor": "成分/口碑" }
+], "overall_summary": "..." }`
+  },
+  t4: {
+    title: 'Prompt 6: 风格润色',
+    layer: 'Layer 2 · Step 3',
+    prompt: `<span class="role">你是一个内容润色编辑。</span>请对草稿进行风格化润色，使其更贴合目标读者和预设风格。
+
+<span class="instr">## 润色方向</span>
+1. 根据目标读者画像调整语气和用词
+2. 优化阅读节奏：长句拆短、短句适当合并
+3. <span class="constraint">修正"AI味"——删除：</span>
+   · "在当今社会""随着XX的发展""众所周知"
+   · "不仅...而且...""一方面...另一方面..."
+   · 过度使用的程度副词（"非常""十分""极其"）→ 删减50%
+4. 保留原文核心信息和逻辑结构
+
+<span class="instr">## 风格池注入机制</span>
+每次生成从风格池随机采样2个风格，分别独立生成两条草稿，
+用户选择最满意的一条或混合两条优点：
+· 专业测评风 | 场景故事风 | 清单干货风
+· 对比横评风 | 深度科普风 | 真实日记风
+· 品牌专属风格（从Prompt 10提取）
+
+<span class="instr">输出（JSON）：</span>
+{ "polished_content": "...", "changes_summary": [...], "ai_tone_score": 2 }`
+  },
+  t5: {
+    title: 'Prompt 7: 质量自检',
+    layer: 'Layer 2 · Step 4 · 发布前最后关卡',
+    prompt: `<span class="role">你是一个严格的内容质量审核员。</span><span class="constraint">你唯一的职责是找出问题，不要为了"通过"而放水。</span>
+
+## 审核维度（每项1-5分）
+
+<span class="instr">事实准确性</span>——明显的错误？编造的数据？夸大或误导？
+
+<span class="instr">逻辑连贯性</span>——论点清晰？段落过渡自然？逻辑跳跃？
+
+<span class="instr">风格一致性</span>——整篇语气统一？符合预设风格{expected_style}？
+
+<span class="instr">原创性</span>——洗稿或过度借鉴的痕迹？
+
+<span class="instr">商业合规</span>——绝对化用语？<span class="constraint">"最好""第一""唯一""100%"</span>？
+
+## 决策逻辑
+· <span class="var">total ≥ 3.5 且无 critical issue → pass → 进入Step 5</span>
+· <span class="constraint">2.5 ≤ total < 3.5 → rewrite → 携带问题回Step 2重写</span>
+· <span class="constraint">total < 2.5 或合规critical issue → block → 强制人工介入</span>
+
+## 输出（JSON）
+{ "scores": {...}, "total": 4.2, "verdict": "pass",
+  "issues": [{ "severity": "minor", "dimension": "style", "suggestion": "..." }] }`
+  },
+  t6: {
+    title: 'Prompt 8: 多平台适配',
+    layer: 'Layer 2 · Step 5 · 三平台并发',
+    prompt: `<span class="role">你是一个多平台内容运营专家。</span>请将以下原始内容适配为{platform}版本。
+
+<span class="instr">## 三平台差异化策略</span>
+
+<span class="var">【小红书】</span>18-35岁女性为主
+- 知识密度高、审美感强、适当使用emoji分段
+- 真实感 > 精致感，口语化但信息不水
+- 标签 ≤10个，禁止过度营销话术
+
+<span class="var">【抖音】</span>全年龄段短视频用户
+- 开头3秒必须有强钩子
+- 句子短（≤20字/句）、节奏快、情绪强
+- 善用热门BGM和挑战话题关联
+
+<span class="var">【B站】</span>18-30岁深度内容消费者
+- 允许深度展开、可以适度玩梗
+- 预留弹幕互动空间（如"弹幕告诉我你们怎么选"）
+- 善用"省流""总结"等B站特色结构
+
+<span class="constraint">如原始内容长度不足，不要强行灌水；如过长，精简约30%。</span>
+
+## 输出（JSON）
+{ "title": "...", "content": "...", "hashtags": [...], "cover_text": "...(≤15字)", "platform_tips": "..." }`
+  },
+  t7: {
+    title: 'Prompt: SICAS 诊断报告',
+    layer: '跨层 · 获客钩子工具',
+    prompt: `<span class="role">你是一个内容策略诊断专家。</span>请基于以下账号数据，输出一份SICAS五环节诊断报告。
+
+<span class="instr">## 诊断框架（罗应中, 2025）</span>
+
+S · <span class="var">Sense 感知</span>——内容是否被目标用户看到？
+I · <span class="var">Interest 兴趣</span>——看到后是否产生兴趣？
+C · <span class="var">Communication 沟通</span>——用户是否在与你互动？
+A · <span class="var">Action 行动</span>——是否采取了下一步行动？
+S · <span class="var">Share 分享</span>——是否愿意传播你的内容？
+
+<span class="instr">## 关键判断逻辑</span>
+- 互动率高但曝光低 → 内容质量好但标题/封面不够"钩人"
+- 互动高但点击/转化低 → "叫好不叫座"，缺乏购买动机引导
+- 收藏高=实用价值强，分享高=情感价值强 → 诊断"传播基因"
+
+## 输出（JSON，五维度0-100分+雷达图数据+优先级行动建议）
+{ "overall_score": 72, "dimensions": {...}, "radar_chart_data": [...],
+  "key_finding": "...", "priority_action": "..." }`
+  },
+  t8: {
+    title: 'Prompt 9: LLM 周报生成',
+    layer: 'Layer 3 · 每周一08:00自动推送',
+    prompt: `<span class="role">你是品牌的内容策略分析师。</span>
+<span class="constraint">你的唯一信息来源是下方提供的数据。如果数据不足以支撑某个结论，你
+必须诚实地说"数据不足，待观察"。不要编造数据中没有的信息。</span>
+
+<span class="instr">## 数据信度判断标准</span>
+- N > 100 且置信区间窄 → <span class="var">高信度</span>，可下确定性结论
+- 30 < N ≤ 100 → <span class="var">中信度</span>，结论需附带"建议继续观察"
+- N ≤ 30 → <span class="var">低信度</span>，禁止下确定性结论
+
+<span class="instr">## 报告输出结构（≤800字）</span>
+1. <span class="instr">关键数字（3个）</span>——转化率/最佳内容/预警信号
+2. <span class="instr">高转化内容模式（≤3个）</span>——模式特征+数据支撑+行动建议
+3. <span class="instr">低效内容模式（≤2个）</span>——特征+建议/标注"数据不足待观察"
+4. <span class="instr">下周行动建议（3-5条）</span>——按预估效果排序
+5. <span class="instr">内容机会雷达</span>——新趋势/竞品变化/内容空白区
+6. <span class="instr">数据信度说明</span>——高/中/低信度结论归类
+
+<span class="constraint">关键约束：
+- 每个确定性结论必须附带数据引用 [N=XX, 95%CI: XX-XX]
+- 置信区间宽的结论在句末标注"(待更多数据验证)"
+- 避免行业黑话——面向中小商家，不是专业数据分析师</span>`
+  },
+  t9: {
+    title: 'Prompt 10: 品牌语音指南提取',
+    layer: '跨层 · B端品牌首次接入',
+    prompt: `<span class="role">你是一个品牌语言分析专家。</span>请从品牌的历史高互动内容中，提取"语音指南"。
+
+<span class="instr">## 输入</span>
+- 品牌近6个月互动率Top-20内容（已脱敏）
+- 品牌官方介绍/品牌故事
+
+<span class="instr">## 分析维度</span>
+
+1. <span class="var">调性定位</span>——专业权威 / 亲切邻家 / 幽默风趣 / 文艺质感 / 极致简约？
+   附最能体现该调性的原文片段（≤30字）
+
+2. <span class="var">语言习惯</span>
+   - 句式偏好（短句/长句？主动/被动语态？）
+   - 修辞偏好（数据论证 or 情感叙事？）
+   - 特征词汇（品牌反复使用的专有词汇）
+
+3. <span class="var">价值观关键词</span>——3-5个最能代表品牌价值观的词，各附原文证据
+
+4. <span class="constraint">"绝不会用的表达"（反向特征，同样重要）</span>
+   - 风格排斥哪些表达方式？
+   - 哪些词汇/句式与其调性冲突？
+
+<span class="instr">## 输出</span>
+含 style_instruction 字段——一段完整的风格指令文本，可直接注入Layer 2 Prompt中作为
+brand_voice_guide 使用，驱动品牌专属LoRA的行为约束。`
+  },
+  t10: {
+    title: 'Prompt 4: 大纲生成',
+    layer: 'Layer 2 · Step 1',
+    prompt: `<span class="role">你是一个专业的{domain}内容创作者。</span>请为以下选题生成一个内容大纲。
+
+<span class="instr">## 任务信息</span>
+- 选题：{topic}
+- 差异化切入角度：{differentiation_angle}
+- 目标读者：{target_fan_segment}
+- 预期内容类型：{content_type}
+
+<span class="instr">## 要求</span>
+1. 生成 3-5 个大纲节点，逻辑递进
+2. 每个节点标注预估字数（总计 ≤ {target_word_count}字）
+3. 每个节点列出 2-3 个"必须覆盖的关键信息点"
+4. 开头节点必须包含一个"钩子"设计
+5. 结尾节点必须包含行动引导
+
+<span class="constraint">风格约束：
+- {style_instruction}（从风格池采样注入）
+- 避免使用禁用词：{banned_words}
+- 禁止使用"众所周知""毋庸置疑""在当今社会"等空话开头</span>
+
+<span class="instr">## 输出格式（严格JSON）</span>
+{ "hook_strategy": "...", "nodes": [
+  { "order": 1, "title": "...", "estimated_words": 200,
+    "key_points": ["...", "..."], "purpose": "..." }
+], "call_to_action": "...", "total_estimated_words": 1200 }`
+  }
+};
+
+// ── Prompt Tab Switching ──
+document.querySelectorAll('.tab-nav button').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const tabId = this.dataset.tab;
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+    const tabEl = document.getElementById(tabId);
+    tabEl.classList.add('active');
+
+    if (!tabEl.dataset.loaded) {
+      const data = promptTemplates[tabId];
+      tabEl.innerHTML = `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+          <div style="padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <h4 style="font-size:14px;font-weight:700;">${data.title}</h4>
+              <span style="font-size:11px;color:var(--text3);">${data.layer}</span>
+            </div>
+          </div>
+          <div style="padding:24px;font-family:'SF Mono','Fira Code',monospace;font-size:12px;line-height:1.8;color:var(--text2);white-space:pre-wrap;word-break:break-all;max-height:450px;overflow-y:auto;background:var(--bg);">${data.prompt}</div>
+        </div>
+      `;
+      tabEl.dataset.loaded = '1';
+    }
+  });
+});
+
+// load first tab
+(function() {
+  const firstTab = document.getElementById('t1');
+  const data = promptTemplates.t1;
+  firstTab.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+      <div style="padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <h4 style="font-size:14px;font-weight:700;">${data.title}</h4>
+          <span style="font-size:11px;color:var(--text3);">${data.layer}</span>
+        </div>
+      </div>
+      <div style="padding:24px;font-family:'SF Mono','Fira Code',monospace;font-size:12px;line-height:1.8;color:var(--text2);white-space:pre-wrap;word-break:break-all;max-height:450px;overflow-y:auto;background:var(--bg);">${data.prompt}</div>
+    </div>
+  `;
+  firstTab.dataset.loaded = '1';
+})();
+
+// smooth scroll for nav links
+document.querySelectorAll('nav a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+  });
+});
+</script>
+</body>
+</html>
